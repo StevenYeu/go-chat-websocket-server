@@ -29,19 +29,20 @@ func (s ChatServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		switch message["type"] {
-		case "auth":
-			fmt.Print("Handle Auth Messages\n")
-
-			user_id, err := parseAuthMessage(message)
+		case "greeting":
+			user_id, err := parseGreetingMessage(message)
 			fmt.Printf("user_id: %d\n", user_id)
 			if err != nil {
 				return
 			}
 			s.Clients[user_id] = c
-			confirmationMessage := SystemMessage{Text: "Authorized"}
+			confirmationMessage := SystemMessage{Text: "Greeting Accepted"}
 			sendMessage(r.Context(), c, &confirmationMessage)
 		case "chat":
-			fmt.Print("Handle Chat Messages\n")
+			// TODO:
+			var chat ChatMessage
+			err = parseChatMessage(message, &chat)
+
 		case "journal":
 			fmt.Print("Handle Journal Messages\n")
 		default:
@@ -72,7 +73,7 @@ func validateMessage(message ChatMessage) bool {
 	return !(message.Sender == 0 || message.Text == "" || message.ConversationID == 0)
 }
 
-func parseAuthMessage(message map[string]interface{}) (int, error) {
+func parseGreetingMessage(message map[string]interface{}) (int, error) {
 	var authMessage AuthMessage
 	jsonString, err := json.Marshal(message)
 
@@ -89,5 +90,18 @@ func parseAuthMessage(message map[string]interface{}) (int, error) {
 	} else {
 		return 2, nil
 	}
+
+}
+
+func parseChatMessage(message map[string]interface{}, receivedMessage *ChatMessage) error {
+	jsonString, err := json.Marshal(message)
+
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(jsonString, receivedMessage)
+
+	return err
 
 }
